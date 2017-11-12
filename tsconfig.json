@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "allowJs": true,
+        "module": "amd",
+        "moduleResolution": "node",
+        "outFile": "./dist/oauthJS.js",
+        "sourceMap": true
+    },
+    "include": [
+        "**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "**/node_modules/*"
+    ]
+}
