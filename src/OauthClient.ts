@@ -7,7 +7,7 @@ namespace OauthJS{
         }
 
         public GetAccessToken(authorizationModel:AuthorizationModel,client:Client):string{
-            return new ClientAuthorization().GetAccessToken(client,this.mOathServer);
+            return new PasswordAuthorization().GetAccessToken(client,this.mOathServer);
         }
     }
 }

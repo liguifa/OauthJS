@@ -9,6 +9,7 @@ var OauthJS;
     let AuthorizationModel;
     (function (AuthorizationModel) {
         AuthorizationModel[AuthorizationModel["Client"] = 0] = "Client";
+        AuthorizationModel[AuthorizationModel["Password"] = 1] = "Password";
     })(AuthorizationModel = OauthJS.AuthorizationModel || (OauthJS.AuthorizationModel = {}));
 })(OauthJS || (OauthJS = {}));
 var OauthJS;
@@ -17,39 +18,12 @@ var OauthJS;
     }
     OauthJS.Client = Client;
 })(OauthJS || (OauthJS = {}));
-const http = require("http");
 var OauthJS;
 (function (OauthJS) {
-    class ClientAuthorization extends OauthJS.Authorization {
-        GetAccessToken(client, server) {
-            const options = {
-                hostname: 'www.google.com',
-                port: 80,
-                path: `https://myleo.rp.edu.sg/oauth/oauth/Authoriz?grant_type=password&username=${client.Username}&password=${client.Password}`,
-                method: 'get',
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                }
-            };
-            const req = http.request(options, (res) => {
-                console.log(`状态码: ${res.statusCode}`);
-                console.log(`响应头: ${JSON.stringify(res.headers)}`);
-                res.setEncoding('utf8');
-                res.on('data', (chunk) => {
-                    console.log(`响应主体: ${chunk}`);
-                });
-                res.on('end', () => {
-                    console.log('响应中已无数据。');
-                });
-            });
-            req.on('error', (e) => {
-                console.error(`请求遇到问题: ${e.message}`);
-            });
-            req.end();
-            return "";
-        }
+    class Config {
     }
-    OauthJS.ClientAuthorization = ClientAuthorization;
+    Config.IsDebug = true;
+    OauthJS.Config = Config;
 })(OauthJS || (OauthJS = {}));
 var OauthJS;
 (function (OauthJS) {
@@ -58,7 +32,7 @@ var OauthJS;
             this.mOathServer = oauthServer;
         }
         GetAccessToken(authorizationModel, client) {
-            return new OauthJS.ClientAuthorization().GetAccessToken(client, this.mOathServer);
+            return new OauthJS.PasswordAuthorization().GetAccessToken(client, this.mOathServer);
         }
     }
     OauthJS.OauthClient = OauthClient;
@@ -84,6 +58,49 @@ var OauthJS;
         }
     }
     OauthJS.OauthServer = OauthServer;
+})(OauthJS || (OauthJS = {}));
+const https = require("https");
+const url = require('url');
+const querystring = require('querystring');
+var OauthJS;
+(function (OauthJS) {
+    class PasswordAuthorization extends OauthJS.Authorization {
+        GetAccessToken(client, server) {
+            if (OauthJS.Config.IsDebug) {
+                process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+            }
+            var base = new Buffer(`${client.ClientId}:${client.Security}`);
+            var authorization = base.toString('base64');
+            const oauthURL = url.parse(server.AuthorizationUrl);
+            const options = {
+                protocol: oauthURL.protocol,
+                host: oauthURL.host,
+                port: oauthURL.port,
+                path: oauthURL.path,
+                method: 'Post',
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Authorization": `Basic ${authorization}`
+                }
+            };
+            const req = https.request(options, (res) => {
+                res.setEncoding('utf8');
+                res.on('data', (chunk) => {
+                    let access_token = JSON.parse(chunk).access_token;
+                    console.log(access_token);
+                });
+            });
+            const postData = querystring.stringify({
+                'grant_type': 'password',
+                'username': client.Username,
+                'password': client.Password,
+            });
+            req.write(postData);
+            req.end();
+            return "";
+        }
+    }
+    OauthJS.PasswordAuthorization = PasswordAuthorization;
 })(OauthJS || (OauthJS = {}));
 let OauthServer = new OauthJS.OauthServer("https://myleo.rp.edu.sg/oauth/oauth/Authoriz", "https://myleo.rp.edu.sg/oauth/oauth/token");
 let OauthClient = new OauthJS.OauthClient(OauthServer);

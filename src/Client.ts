@@ -5,5 +5,7 @@ namespace OauthJS{
         public Password:string;
 
         public ClientId:string;
+
+        public Security:string;
     }
 }
