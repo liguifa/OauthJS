@@ -1,5 +1,5 @@
 namespace OauthJS{
-    export enum AuthorizationModel{
+    export enum AuthorizeModel{
         Client,
         Password
     }
